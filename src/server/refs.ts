@@ -236,7 +236,12 @@ export type checkInputValues<Values, Location extends string> = {
     : InputRef;
 };
 
-type hasDefault<Value> = Value extends { defaultValue: any } ? true : false;
+// NOTE: graphql-js treats a `defaultValue` of `undefined` as no default value
+type hasDefault<Value> = Value extends { defaultValue: infer Default }
+  ? undefined extends Default
+    ? false
+    : true
+  : false;
 
 /** Values as a resolver receives them, after defaults have been applied. */
 export type InputValuesShape<Values> = obj<

@@ -512,6 +512,36 @@ describe('builder soundness', () => {
     t.input('Range', { fields: { from: { type: DateTime, defaultValue: '1970-01-01' } } });
   });
 
+  it("doesn't treat undefined default values as defaults", () => {
+    const maybe = undefined as number | undefined;
+    const Input = t.input('Input', {
+      fields: {
+        unset: { type: t.nonNull(t.Int), defaultValue: undefined },
+        maybe: { type: t.nonNull(t.Int), defaultValue: maybe },
+        nulled: { type: t.Int, defaultValue: null },
+      },
+    });
+    t.object(t.objectRef()('Query'), {
+      fields: (f) => ({
+        field: f.field({
+          type: t.String,
+          args: { input: t.nonNull(Input), maybe: { type: t.Int, defaultValue: maybe } },
+          resolve(_, args) {
+            // graphql-js omits values whose default value is `undefined`
+            expectTypeOf(args.maybe).toEqualTypeOf<number | null | undefined>();
+            expectTypeOf(args.input).toEqualTypeOf<{
+              unset: number;
+              maybe: number;
+              nulled: number | null;
+            }>();
+            return null;
+          },
+        }),
+      }),
+    });
+    expectTypeOf<NonNullable<(typeof Input)['~fragment']>['defaults']>().toEqualTypeOf<'nulled'>();
+  });
+
   it('requires parseValue when parseLiteral is set', () => {
     t.scalar('Date', {
       serialize: (value: Date) => value.toISOString(),
