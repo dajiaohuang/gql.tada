@@ -36,6 +36,7 @@ interface Ref {
   readonly name?: string;
   readonly ofType?: Ref;
   readonly '~config'?: any;
+  readonly '~named'?: boolean;
 }
 
 interface Applied {
@@ -151,6 +152,10 @@ export function buildSchema(config: BuildConfig, fieldBuilder: unknown): GraphQL
     if (group.length && group[0].kind !== definition.kind)
       throw new TypeError(
         `Type "${name}" is defined as both ${group[0].kind} and ${definition.kind}.`
+      );
+    if (definition['~named'] && group.some((other) => other['~named']))
+      throw new TypeError(
+        `Type "${name}" is defined more than once. Types defined in several places must be defined from a reference.`
       );
     group.push(definition);
   };

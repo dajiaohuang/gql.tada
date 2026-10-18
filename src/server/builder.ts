@@ -922,6 +922,8 @@ const define = (kind: string, ref: string | NamedRef, config: unknown): any => (
   kind,
   name: typeof ref === 'string' ? ref : ref.name,
   '~config': config,
+  // NOTE: Only types defined from references may be defined more than once
+  '~named': typeof ref === 'string',
 });
 
 /** Creates a schema builder.

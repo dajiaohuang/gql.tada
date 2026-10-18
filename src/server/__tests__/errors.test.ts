@@ -41,6 +41,18 @@ describe('schema errors', () => {
     ).toThrow('Enum value "Role.A" is defined more than once.');
   });
 
+  it('throws when a type defined from a name is defined again', () => {
+    const Status = t.enum('Status', { values: ['A'] });
+    const OtherStatus = t.enum('Status', { values: ['B'] });
+    expect(() => t.schema({ query: hello, types: [Status, OtherStatus] })).toThrow(
+      'Type "Status" is defined more than once. Types defined in several places must be defined from a reference.'
+    );
+    // Scalars defined from a name may still be extended via their definition
+    const DateTime = t.scalar('DateTime', { serialize: (value: Date) => value.toISOString() });
+    const described = t.scalar(DateTime, { description: 'A date' });
+    expect(() => t.schema({ query: hello, types: [DateTime, described] })).not.toThrow();
+  });
+
   it('throws when definitions set conflicting options', () => {
     const a = t.object(Query, { description: 'a' });
     const b = t.object(Query, { description: 'b' });
